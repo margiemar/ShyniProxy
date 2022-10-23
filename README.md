@@ -1,1 +1,1 @@
-# ShyniProxy
+# ShinyProxy
