@@ -1,0 +1,92 @@
+Установка на ubuntu 20.04
+
+
+Установка Docker
+*********************************
+
+sudo apt-get remove docker docker-engine docker.io containerd runc
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+
+sudo systemctl edit docker
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd -H unix:// -D -H tcp://127.0.0.1:2375
+
+#Запись автоматически добавляется в /etc/systemd/system/docker.service.d/override.conf
+
+$ sudo systemctl daemon-reload
+$ sudo systemctl restart docker
+
+sudo service docker status должен показать
+CGroup: /system.slice/docker.service
+             └─149940 /usr/bin/dockerd -H unix:// -D -H tcp://127.0.0.1:2375
+
+
+$ sudo systemctl daemon-reload
+$ sudo systemctl restart docker
+
+
+
+Установка Java
+******************************
+
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0x219BD9C9
+apt_source='deb http://repos.azulsystems.com/debian stable main'
+apt_list='/etc/apt/sources.list.d/zulu.list'
+echo "$apt_source" | sudo tee "$apt_list" > /dev/null
+sudo apt-get update
+sudo apt-get install zulu-8 -y
+
+Установка ShinyProxy
+**********************************
+
+git clone https://github.com/openanalytics/shinyproxy.git
+cd shinyproxy/
+mvn -U clean install
+
+
+cd target/
+java -jar shinyproxy-2.6.1.jar
+
+http://localhost:8080 (tesla/password)
+При клике на приложение в браузерном окне shinyproxy запускается контейнер с app.R
+
+
+Приложения
+**********************************
+1. openanalytics/shinyproxy-demo
+
+Настройки в application.yml остались для тестирования добавления приложений,
+собранных из Dockerfile.
+
+sudo docker pull openanalytics/shinyproxy-demo
+Запуск контейнеров происходит по клику на главной странице ShinyProxy.
+
+2.application-demo
+Использован для тестирования добавления и запуска новых приложений.
+
+
+git clone https://github.com/openanalytics/shinyproxy-template.git
+cd shinyproxy-template/
+docker build -t openanalytics/shinyproxy-template .
+docker run -it -p 3838:3838  openanalytics/shinyproxy-template
+
+vi application.yml
+specs:
+  - id: euler
+    display-name: Euler's number
+    container-cmd: ["R", "-e", "shiny::runApp('/root/euler')"]
+    container-image: openanalytics/shinyproxy-template
+    access-groups: scientists
+
+
+Для запуска необходим рестарт сервера.
+
+*******************************************************************************
+
+Источники:
+https://docs.docker.com/engine/install/debian/
+https://www.shinyproxy.io/documentation/getting-started/
+https://lukesingham.com/shiny-containers-with-shinyproxy/
+https://www.shinyproxy.io/documentation/deploying-apps/
